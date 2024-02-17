@@ -25,23 +25,30 @@ const options = {
 };
 
 const scrollToGallery = () => {
-  const { height: cardHeight } = document.querySelector('.gallery').firstElementChild.getBoundingClientRect();
+  const { height: cardHeight } = document
+    .querySelector('.gallery')
+    .firstElementChild.getBoundingClientRect();
   window.scrollBy({
     top: cardHeight * 2,
     behavior: 'smooth',
   });
 };
 
-const shouldHideLoadMoreButton = (loadedImagesCount, totalImagesCount) => loadedImagesCount >= totalImagesCount;
+const shouldHideLoadMoreButton = (loadedImagesCount, totalImagesCount) =>
+  loadedImagesCount >= totalImagesCount;
 
-const renderPhotos = async (data) => {
-  const markup = data.hits.map((data) => `<li class="gallery-item"><a href="${data.webformatURL}">
+const renderPhotos = async data => {
+  const markup = data.hits
+    .map(
+      data => `<li class="gallery-item"><a href="${data.webformatURL}">
             <img class="gallery-image" src="${data.webformatURL}" alt="${data.tags}"></a>
             <p><b>Likes: </b>${data.likes}</p>
             <p><b>Views: </b>${data.views}</p>
             <p><b>Comments: </b>${data.comments}</p>
             <p><b>Downloads: </b>${data.downloads}</p>
-            </li>`).join('');
+            </li>`
+    )
+    .join('');
 
   if (lightbox) {
     lightbox.destroy();
@@ -53,7 +60,7 @@ const renderPhotos = async (data) => {
   await lightbox.refresh();
 };
 
-const fetchPhotos = async (userQuery) => {
+const fetchPhotos = async userQuery => {
   const params = new URLSearchParams({
     page: page,
     per_page: per_page,
@@ -89,7 +96,7 @@ const hideLoadMoreButton = () => {
   loadMoreBtn.style.display = 'none';
 };
 
-fetchPicturesForm.addEventListener('submit', async (e) => {
+fetchPicturesForm.addEventListener('submit', async e => {
   showLoader();
   page = 1;
   e.preventDefault();
@@ -107,7 +114,8 @@ fetchPicturesForm.addEventListener('submit', async (e) => {
       iziToast.error({
         title: '',
         backgroundColor: '#EF4040',
-        message: 'Sorry, there are no images matching your search query. Please try again!',
+        message:
+          'Sorry, there are no images matching your search query. Please try again!',
       });
 
       scrollToGallery();
@@ -136,7 +144,8 @@ loadMoreBtn.addEventListener('click', async () => {
     if (gallery.children.length >= photos.totalHits) {
       iziToast.warning({
         title: '',
-        message: 'We are sorry, but you have reached the end of search results.',
+        message:
+          'We are sorry, but you have reached the end of search results.',
       });
       hideLoadMoreButton();
     }
