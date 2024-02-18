@@ -10,12 +10,12 @@ const userInput = document.querySelector('input');
 const containerDiv = document.querySelector('.container');
 const loadMoreBtn = document.querySelector('.btn-load');
 
-let page = 1;
-let per_page = 40;
+let currentPage = 1;
+const itemsPerPage = 40; // Кількість зображень на сторінку
 let lightbox;
 let userQuery = '';
 
-const options = {
+const lightboxOptions = {
   captions: true,
   captionSelector: 'img',
   captionType: 'attr',
@@ -37,15 +37,15 @@ const scrollToGallery = () => {
 const shouldHideLoadMoreButton = (loadedImagesCount, totalImagesCount) =>
   loadedImagesCount >= totalImagesCount;
 
-const renderPhotos = async data => {
+const renderGalleryItems = async (data) => {
   const markup = data.hits
     .map(
-      data => `<li class="gallery-item"><a href="${data.webformatURL}">
-            <img class="gallery-image" src="${data.webformatURL}" alt="${data.tags}"></a>
-            <p><b>Likes: </b>${data.likes}</p>
-            <p><b>Views: </b>${data.views}</p>
-            <p><b>Comments: </b>${data.comments}</p>
-            <p><b>Downloads: </b>${data.downloads}</p>
+      (item) => `<li class="gallery-item"><a href="${item.webformatURL}">
+            <img class="gallery-image" src="${item.webformatURL}" alt="${item.tags}"></a>
+            <p><b>Likes: </b>${item.likes}</p>
+            <p><b>Views: </b>${item.views}</p>
+            <p><b>Comments: </b>${item.comments}</p>
+            <p><b>Downloads: </b>${item.downloads}</p>
             </li>`
     )
     .join('');
@@ -55,22 +55,18 @@ const renderPhotos = async data => {
   }
 
   gallery.insertAdjacentHTML('beforeend', markup);
-  lightbox = new SimpleLightbox('.gallery a', options);
+  lightbox = new SimpleLightbox('.gallery a', lightboxOptions);
   lightbox.on('show.simplelightbox');
   await lightbox.refresh();
 };
 
-const fetchPhotos = async userQuery => {
-  const params = new URLSearchParams({
-    page: page,
-    per_page: per_page,
-  });
+const fetchImages = async (userQuery) => {
   const apiKey = '22866492-0a616de8c4fefaa29c0c168ad';
   const query = userQuery || userInput.value;
   const response = await axios.get(
     `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(
       query
-    )}&image_type=photo&orientation=horizontal&safesearch=true&page=${page}&per_page=${per_page}`
+    )}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=${itemsPerPage}`
   );
   return response.data;
 };
@@ -96,37 +92,63 @@ const hideLoadMoreButton = () => {
   loadMoreBtn.style.display = 'none';
 };
 
-fetchPicturesForm.addEventListener('submit', async e => {
-  showLoader();
-  page = 1;
+const showEndOfResultsMessage = () => {
+  iziToast.info({
+    title: '',
+    message: "We're sorry, but you've reached the end of search results.",
+  });
+};
+
+const showErrorToast = () => {
+  iziToast.error({
+    title: '',
+    backgroundColor: '#EF4040',
+    message: 'An error occurred while loading images. Please try again.',
+  });
+};
+
+fetchPicturesForm.addEventListener('submit', async (e) => {
   e.preventDefault();
+
+  // Check if the user entered a non-empty value
+  if (!userInput.value.trim()) {
+    iziToast.warning({
+      title: '',
+      message: 'Enter a keyword to search.',
+    });
+    return;
+  }
+
+  showLoader();
+  currentPage = 1;
   gallery.innerHTML = '';
   userQuery = userInput.value;
 
   try {
-    const photos = await fetchPhotos(userQuery);
-    await renderPhotos(photos);
+    const images = await fetchImages(userQuery);
+    await renderGalleryItems(images);
     fetchPicturesForm.reset();
     hideLoader();
     showLoadMoreButton();
 
-    if (photos.hits.length === 0) {
+    if (images.hits.length === 0) {
       iziToast.error({
         title: '',
         backgroundColor: '#EF4040',
-        message:
-          'Sorry, there are no images matching your search query. Please try again!',
+        message: 'Sorry, there are no images matching your search query. Please try again!',
       });
 
       scrollToGallery();
     }
-    if (shouldHideLoadMoreButton(gallery.children.length, photos.totalHits)) {
+
+    if (shouldHideLoadMoreButton(gallery.children.length, images.totalHits)) {
       hideLoadMoreButton();
     } else {
       showLoadMoreButton();
     }
   } catch (error) {
     console.log(error);
+    showErrorToast();
     hideLoadMoreButton();
   }
 });
@@ -134,23 +156,20 @@ fetchPicturesForm.addEventListener('submit', async e => {
 loadMoreBtn.addEventListener('click', async () => {
   showLoader();
   try {
-    page += 1;
-    const photos = await fetchPhotos();
-    await renderPhotos(photos);
+    currentPage += 1;
+    const images = await fetchImages();
+    await renderGalleryItems(images);
     hideLoader();
 
     scrollToGallery();
 
-    if (gallery.children.length >= photos.totalHits) {
-      iziToast.warning({
-        title: '',
-        message:
-          'We are sorry, but you have reached the end of search results.',
-      });
+    if (gallery.children.length >= images.totalHits) {
+      showEndOfResultsMessage();
       hideLoadMoreButton();
     }
   } catch (error) {
     console.log(error);
+    showErrorToast();
     hideLoader();
     hideLoadMoreButton();
   }

@@ -89,6 +89,7 @@ input:focus {
   border-radius: 50%;
   display: inline-block;
   box-sizing: border-box;
+  visibility: hidden; /* Змінено display на visibility */
   animation: rotation 1s linear infinite;
 }
 
