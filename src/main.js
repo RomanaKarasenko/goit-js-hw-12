@@ -11,7 +11,7 @@ const containerDiv = document.querySelector('.container');
 const loadMoreBtn = document.querySelector('.btn-load');
 
 let currentPage = 1;
-const itemsPerPage = 40; // Кількість зображень на сторінку
+const itemsPerPage = 15; // Кількість зображень на сторінку
 let lightbox;
 let userQuery = '';
 
@@ -125,7 +125,7 @@ fetchPicturesForm.addEventListener('submit', async (e) => {
   userQuery = userInput.value;
 
   try {
-    const images = await fetchImages(userQuery);
+    const images = await fetchImages(userQuery, currentPage);
     await renderGalleryItems(images);
     fetchPicturesForm.reset();
     hideLoader();
